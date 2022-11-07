@@ -48,8 +48,8 @@ defmodule HttpClient.MixProject do
       {:finch, "~> 0.13"},
       {:tesla, "~> 1.4.4"},
       #
-      #{:utils, in_umbrella: true}
-      {:utils, git: "https://github.com/AndreyGesler/elixir_utils.git", tag: "dev"}
+      {:utils, in_umbrella: true}
+#      {:utils, git: "https://github.com/AndreyGesler/elixir_utils.git", tag: "dev"}
     ]
   end
 
