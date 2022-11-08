@@ -11,7 +11,7 @@ defmodule HttpClient do
 
   alias Tesla.Multipart, as: Multipart
 
-  @methods [:post, :get]
+  @http_methods [:post, :get]
 
   ##############################################################################
   @doc """
@@ -35,10 +35,10 @@ defmodule HttpClient do
 
   def http_send!(method, url, body, request_headers)
       when is_nil(method) or is_nil(url) or is_nil(request_headers) or
-             method not in @methods or not is_bitstring(url) or
+             method not in @http_methods or not is_bitstring(url) or
              (not is_nil(body) and not is_bitstring(body) and not is_tuple(body)) or not is_list(request_headers) do
     throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, [
-      "method, url, request_headers can not be nil; url, if body not nil must be a string or tuple {:stream, stream}; request_headers must be a list; method, method must be one of #{inspect(@methods)}"
+      "method, url, request_headers can not be nil; url, if body not nil must be a string or tuple {:stream, stream}; request_headers must be a list; method, method must be one of #{inspect(@http_methods)}"
     ])
   end
 
@@ -222,7 +222,7 @@ defmodule HttpClient do
 
     http_send!(:post, url, {:stream, stream}, mp_headers)
   end
-
+  
   ##############################################################################
   ##############################################################################
 end
