@@ -15,7 +15,7 @@ defmodule HttpClient do
 
   ##############################################################################
   @doc """
-  Hello pong.
+  Ping pong.
 
   ## Examples
 
