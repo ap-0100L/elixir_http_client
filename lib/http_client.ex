@@ -4,13 +4,14 @@ defmodule HttpClient do
   @moduledoc """
 
   """
-  use Tesla
-  adapter(Tesla.Adapter.Finch, name: CommonFinch)
+  # use Tesla
+  # adapter(Tesla.Adapter.Finch, name: CommonFinch)
 
   use Utils
 
   alias Tesla.Multipart, as: Multipart
 
+  @auth_type_ids [:basic_auth, :telegram_bot_token, :bearer_token, :url_token]
   @http_methods [:post, :get]
 
   ##############################################################################
@@ -43,6 +44,7 @@ defmodule HttpClient do
   end
 
   def http_send!(method, url, body, request_headers) do
+
     content_type =
       Enum.find(
         request_headers,
@@ -222,7 +224,82 @@ defmodule HttpClient do
 
     http_send!(:post, url, {:stream, stream}, mp_headers)
   end
-  
+
+  ##############################################################################
+  @doc """
+
+  """
+  def post!(url, body, request_headers \\ [])
+
+  def post!(url, body, request_headers) do
+    http_send!(:post, url, body, request_headers)
+  end
+
+  ##############################################################################
+  @doc """
+  :telegram_bot_token endpoint = https://example.com?<TOKEN> --->>> https://example.com?botSERGSDVSDGADFGZXVSDG
+  """
+  def get!(url, request_headers \\ [])
+
+  def get!(url, request_headers) do
+    http_send!(:get, url, nil, request_headers)
+  end
+
+  def build_auth!(auth_type_id, credential, endpoint)
+      when auth_type_id not in @auth_type_ids or not is_map(credential) or (not is_nil(endpoint) and not is_bitstring(endpoint)),
+      do:
+        throw_error!(
+          :CODE_WRONG_FUNCTION_ARGUMENT_ERROR,
+          ["auth_type_id, credential cannot be nil; auth_type_id must be one of #{inspect(@auth_type_ids)}; endpoint if not nil must be a string"]
+        )
+
+  def build_auth!(:telegram_bot_token, %{token: token} = _credential, endpoint)
+      when not is_bitstring(token) or not is_bitstring(endpoint),
+      do: throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["token, endpoint cannot be nil; token, endpoint must be a string"], auth_type_id: :telegram_bot_token)
+
+  def build_auth!(:telegram_bot_token, %{token: token} = _credential, endpoint) do
+    throw_if_empty!(endpoint, :string, "Wrong endpoint value")
+    throw_if_empty!(token, :string, "Wrong token value")
+
+    regex = ~r/<TOKEN>/
+    endpoint = Regex.replace(regex, endpoint, "bot" <> token)
+
+    {:ok, endpoint}
+  end
+
+  def build_auth!(:basic_auth, %{login: login, password: password} = _credential, _endpoint)
+      when not is_bitstring(login) or not is_bitstring(password),
+      do: throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["login, password cannot be nil; login, password must be a string"], auth_type_id: :basic_auth)
+
+  def build_auth!(:basic_auth, %{login: login, password: password} = _credential, _endpoint) do
+    throw_if_empty!(login, :string, "Wrong login value")
+    throw_if_empty!(password, :string, "Wrong password value")
+
+    header = login <> ":" <> password
+    {:ok, header} = Utils.encode64!(header)
+    header = "Basic " <> header
+    header = {"Authorization", header}
+
+    {:ok, header}
+  end
+
+  def build_auth!(:bearer_token, %{token: token} = _credential, _endpoint)
+      when not is_bitstring(token),
+      do: throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["token cannot be nil; token must be a string"], auth_type_id: :bearer_token)
+
+  def build_auth!(:bearer_token, %{token: token} = _credential, _endpoint) do
+    throw_if_empty!(token, :string, "Wrong token value")
+
+    # {:ok, token} = Utils.encode64!(token)
+    header = "Bearer " <> token
+    header = {"Authorization", header}
+
+    {:ok, header}
+  end
+
+  def build_auth!(auth_type_id, _credential, _endpoint),
+    do: throw_error!(:CODE_UNSUPPORTED_ARGUMENT_COMBINATION_ERROR, ["Unsupported argument combination"], auth_type_id: auth_type_id)
+
   ##############################################################################
   ##############################################################################
 end
