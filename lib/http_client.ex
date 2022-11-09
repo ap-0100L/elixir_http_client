@@ -48,7 +48,7 @@ defmodule HttpClient do
     content_type =
       Enum.find(
         request_headers,
-        fn {name, value} ->
+        fn {name, _value} ->
           name = String.upcase(name)
           name == "CONTENT-TYPE"
         end
@@ -57,7 +57,7 @@ defmodule HttpClient do
     user_agent =
       Enum.find(
         request_headers,
-        fn {name, value} ->
+        fn {name, _value} ->
           name = String.upcase(name)
           name == "USER-AGENT"
         end
@@ -211,11 +211,11 @@ defmodule HttpClient do
   @doc """
 
   """
-  def send_multipart_form!(url, fields, content_type_param \\ "charset=utf-8", files \\ [], files_content \\ [])
+  def send_multipart_form!(url, fields \\ [], content_type_param \\ "charset=utf-8", files \\ [], files_content \\ [])
 
   def send_multipart_form!(url, fields, content_type_param, files, files_content)
-      when not is_bitstring(url),
-      do: throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["url cannot be nil; url must be a string"])
+      when not is_bitstring(url) or not is_bitstring(content_type_param) or not is_list(fields) or not is_list(files) or not is_list(files_content),
+      do: throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["url, fields, content_type_param, files, files_content cannot be nil; url, content_type_param must be a string; fields, files, files_content must be a list"])
 
   def send_multipart_form!(url, fields, content_type_param, files, files_content) do
     {:ok, mp} = build_multipart_form!(fields, content_type_param, files, files_content)
