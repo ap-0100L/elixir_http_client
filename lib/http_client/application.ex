@@ -27,8 +27,6 @@ defmodule HttpClient.Application do
   defp get_children! do
     {:ok, pools} = get_app_env!(:pools)
 
-    IO.inspect(pools)
-
     result = [
       {Finch, name: CommonFinch, pools: pools}
     ]
