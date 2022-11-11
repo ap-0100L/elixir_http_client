@@ -25,19 +25,12 @@ defmodule HttpClient.Application do
   # get_children!
   """
   defp get_children! do
+    {:ok, pools} = get_app_env!(:pools)
+
+    IO.inspect(pools)
+
     result = [
-      {Finch,
-       name: CommonFinch,
-       pools: %{
-         :default => [
-           protocol: :http1,
-           size: 10,
-           count: 5,
-           conn_max_idle_time: 10_000,
-           pool_max_idle_time: 10_000,
-           conn_opts: [transport_opts: [verify: :verify_none]]
-         ]
-       }}
+      {Finch, name: CommonFinch, pools: pools}
     ]
 
     {:ok, result}
