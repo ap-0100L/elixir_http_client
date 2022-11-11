@@ -298,7 +298,7 @@ defmodule HttpClient do
   end
 
   def build_auth!(auth_type_id, _credential, _endpoint),
-    do: throw_error!(:CODE_UNSUPPORTED_ARGUMENT_COMBINATION_ERROR, ["Unsupported argument combination"], auth_type_id: auth_type_id)
+    do: throw_error!(:CODE_WRONG_ARGUMENT_COMBINATION_ERROR, ["Wrong argument combination"], auth_type_id: auth_type_id)
 
   ##############################################################################
   ##############################################################################
