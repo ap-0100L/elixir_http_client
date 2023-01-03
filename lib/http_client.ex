@@ -2,23 +2,27 @@ defmodule HttpClient do
   ##############################################################################
   ##############################################################################
   @moduledoc """
-
+  ## Module
   """
+
   # use Tesla
   # adapter(Tesla.Adapter.Finch, name: CommonFinch)
 
+  use GenServer
   use Utils
 
   alias Tesla.Multipart, as: Multipart
+  alias HttpClient.Services.HttpClientService, as: HttpClientService
 
   @auth_type_ids [:basic_auth, :telegram_bot_token, :bearer_token, :url_token]
   @http_methods [:post, :get]
+  @exclude_headers_from_error ["authorization", "token", "secret"]
 
   ##############################################################################
   @doc """
-  Ping pong.
+  ### Ping pong.
 
-  ## Examples
+  ### Examples
 
       iex> HttpClient.ping()
       :pong
@@ -30,7 +34,7 @@ defmodule HttpClient do
 
   ##############################################################################
   @doc """
-
+  ### Function
   """
   def http_send!(method, url, body \\ nil, request_headers \\ [])
 
@@ -38,55 +42,38 @@ defmodule HttpClient do
       when is_nil(method) or is_nil(url) or is_nil(request_headers) or
              method not in @http_methods or not is_bitstring(url) or
              (not is_nil(body) and not is_bitstring(body) and not is_tuple(body)) or not is_list(request_headers) do
-    throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, [
+    UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, [
       "method, url, request_headers can not be nil; url, if body not nil must be a string or tuple {:stream, stream}; request_headers must be a list; method, method must be one of #{inspect(@http_methods)}"
     ])
   end
 
   def http_send!(method, url, body, request_headers) do
-
-    content_type =
-      Enum.find(
-        request_headers,
-        fn {name, _value} ->
-          name = String.upcase(name)
-          name == "CONTENT-TYPE"
-        end
-      )
-
-    user_agent =
-      Enum.find(
-        request_headers,
-        fn {name, _value} ->
-          name = String.upcase(name)
-          name == "USER-AGENT"
-        end
-      )
-
-    request_headers =
-      if is_nil(content_type) do
-        request_headers ++ [{"content-type", "application/json"}]
-      else
-        request_headers
-      end
-
-    request_headers =
-      if is_nil(user_agent) do
-        request_headers ++ [{"user-agent", "PostmanRuntime/7.29.2"}]
-      else
-        request_headers
-      end
-
-    content_type = content_type || {"content-type", "application/json"}
+    content_type = "application/json"
+    request_headers = request_headers ++ [{"User-Agent", "PostmanRuntime/7.29.2"}]
+    request_headers = request_headers ++ [{"Content-Type", content_type}]
 
     request_options = [
-      {:pool_timeout, 10_000},
-      {:receive_timeout, 10_000}
+      # FIXME: Move it to config, please
+      {:pool_timeout, 20_000},
+      {:receive_timeout, 20_000}
     ]
 
     response =
       Finch.build(method, url, request_headers, body)
       |> Finch.request(CommonFinch, request_options)
+
+    request_headers =
+      Enum.reduce(
+        request_headers,
+        [],
+        fn {name, value} = header, accum ->
+          if String.downcase(name) in @exclude_headers_from_error do
+            accum
+          else
+            accum ++ [header]
+          end
+        end
+      )
 
     response_body =
       case response do
@@ -94,8 +81,8 @@ defmodule HttpClient do
           if 200 <= status and status <= 299 do
             response.body
           else
-            throw_error!(
-              :CODE_HTTP_REMOTE_SERVICE_RESPONDED_WITH_ERROR,
+            UniError.raise_error!(
+              :CODE_HTTP_REMOTE_SERVICE_RESPONDED_NOT_2XX_ERROR,
               ["Remote service responded with error"],
               url: url,
               method: method,
@@ -110,7 +97,7 @@ defmodule HttpClient do
           end
 
         {:ok, response} ->
-          throw_error!(
+          UniError.raise_error!(
             :CODE_HTTP_REMOTE_SERVICE_RESPONDED_WITH_ERROR,
             ["Remote service responded with error"],
             url: url,
@@ -126,7 +113,7 @@ defmodule HttpClient do
 
         {:error, reason} ->
           # TODO: In this case re-query message or retry re-resend
-          throw_error!(
+          UniError.raise_error!(
             :CODE_HTTP_CONNECTION_ERROR,
             ["HTTP connection error"],
             url: url,
@@ -135,11 +122,11 @@ defmodule HttpClient do
             request_headers: request_headers,
             request_options: request_options,
             request_body: body,
-            reason: reason
+            previous: reason
           )
 
         unexpected ->
-          throw_error!(
+          UniError.raise_error!(
             :CODE_HTTP_CONNECTION_UNEXPECTED_ERROR,
             ["HTTP connection unexpected error"],
             url: url,
@@ -147,7 +134,7 @@ defmodule HttpClient do
             content_type: content_type,
             request_headers: request_headers,
             request_options: request_options,
-            reason: unexpected
+            previous: unexpected
           )
       end
 
@@ -156,6 +143,8 @@ defmodule HttpClient do
 
   ##############################################################################
   @doc """
+  ### Function
+
   fields = [
     {field_name, value, headers},
     {"client_id", "339eb665-65e6-44fe-85f4-01eccd2ec775", []}, 
@@ -167,7 +156,7 @@ defmodule HttpClient do
 
   def build_multipart_form!(fields, content_type_param, files, files_content)
       when not is_list(fields) or not is_bitstring(content_type_param) or not is_list(files) or not is_list(files_content),
-      do: throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["fields, content_type_param, files, files_content cannot be nil; fields, files, files_content must be a list; content_type_param must be a string"])
+      do: UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["fields, content_type_param, files, files_content cannot be nil; fields, files, files_content must be a list; content_type_param must be a string"])
 
   def build_multipart_form!(fields, content_type_param, files, files_content) do
     mp =
@@ -209,13 +198,13 @@ defmodule HttpClient do
 
   ##############################################################################
   @doc """
-
+  ### Function
   """
   def send_multipart_form!(url, fields \\ [], content_type_param \\ "charset=utf-8", files \\ [], files_content \\ [])
 
   def send_multipart_form!(url, fields, content_type_param, files, files_content)
       when not is_bitstring(url) or not is_bitstring(content_type_param) or not is_list(fields) or not is_list(files) or not is_list(files_content),
-      do: throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["url, fields, content_type_param, files, files_content cannot be nil; url, content_type_param must be a string; fields, files, files_content must be a list"])
+      do: UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["url, fields, content_type_param, files, files_content cannot be nil; url, content_type_param must be a string; fields, files, files_content must be a list"])
 
   def send_multipart_form!(url, fields, content_type_param, files, files_content) do
     {:ok, mp} = build_multipart_form!(fields, content_type_param, files, files_content)
@@ -227,7 +216,7 @@ defmodule HttpClient do
 
   ##############################################################################
   @doc """
-
+  ### Function
   """
   def post!(url, body, request_headers \\ [])
 
@@ -237,6 +226,8 @@ defmodule HttpClient do
 
   ##############################################################################
   @doc """
+  ### Function
+
   :telegram_bot_token endpoint = https://example.com?<TOKEN> --->>> https://example.com?botSERGSDVSDGADFGZXVSDG
   """
   def get!(url, request_headers \\ [])
@@ -248,18 +239,18 @@ defmodule HttpClient do
   def build_auth!(auth_type_id, credential, endpoint)
       when auth_type_id not in @auth_type_ids or not is_map(credential) or (not is_nil(endpoint) and not is_bitstring(endpoint)),
       do:
-        throw_error!(
+        UniError.raise_error!(
           :CODE_WRONG_FUNCTION_ARGUMENT_ERROR,
           ["auth_type_id, credential cannot be nil; auth_type_id must be one of #{inspect(@auth_type_ids)}; endpoint if not nil must be a string"]
         )
 
   def build_auth!(:telegram_bot_token, %{token: token} = _credential, endpoint)
       when not is_bitstring(token) or not is_bitstring(endpoint),
-      do: throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["token, endpoint cannot be nil; token, endpoint must be a string"], auth_type_id: :telegram_bot_token)
+      do: UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["token, endpoint cannot be nil; token, endpoint must be a string"], auth_type_id: :telegram_bot_token)
 
   def build_auth!(:telegram_bot_token, %{token: token} = _credential, endpoint) do
-    throw_if_empty!(endpoint, :string, "Wrong endpoint value")
-    throw_if_empty!(token, :string, "Wrong token value")
+    raise_if_empty!(endpoint, :string, "Wrong endpoint value")
+    raise_if_empty!(token, :string, "Wrong token value")
 
     regex = ~r/<TOKEN>/
     endpoint = Regex.replace(regex, endpoint, "bot" <> token)
@@ -269,11 +260,11 @@ defmodule HttpClient do
 
   def build_auth!(:basic_auth, %{login: login, password: password} = _credential, _endpoint)
       when not is_bitstring(login) or not is_bitstring(password),
-      do: throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["login, password cannot be nil; login, password must be a string"], auth_type_id: :basic_auth)
+      do: UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["login, password cannot be nil; login, password must be a string"], auth_type_id: :basic_auth)
 
   def build_auth!(:basic_auth, %{login: login, password: password} = _credential, _endpoint) do
-    throw_if_empty!(login, :string, "Wrong login value")
-    throw_if_empty!(password, :string, "Wrong password value")
+    raise_if_empty!(login, :string, "Wrong login value")
+    raise_if_empty!(password, :string, "Wrong password value")
 
     header = login <> ":" <> password
     {:ok, header} = Utils.encode64!(header)
@@ -285,10 +276,10 @@ defmodule HttpClient do
 
   def build_auth!(:bearer_token, %{token: token} = _credential, _endpoint)
       when not is_bitstring(token),
-      do: throw_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["token cannot be nil; token must be a string"], auth_type_id: :bearer_token)
+      do: UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["token cannot be nil; token must be a string"], auth_type_id: :bearer_token)
 
   def build_auth!(:bearer_token, %{token: token} = _credential, _endpoint) do
-    throw_if_empty!(token, :string, "Wrong token value")
+    raise_if_empty!(token, :string, "Wrong token value")
 
     # {:ok, token} = Utils.encode64!(token)
     header = "Bearer " <> token
@@ -298,7 +289,62 @@ defmodule HttpClient do
   end
 
   def build_auth!(auth_type_id, _credential, _endpoint),
-    do: throw_error!(:CODE_WRONG_ARGUMENT_COMBINATION_ERROR, ["Wrong argument combination"], auth_type_id: auth_type_id)
+    do: UniError.raise_error!(:CODE_WRONG_ARGUMENT_COMBINATION_ERROR, ["Wrong argument combination"], auth_type_id: auth_type_id)
+
+  ##############################################################################
+  @doc """
+  Supervisor's child specification
+  """
+  def child_spec(opts) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [opts]}
+    }
+  end
+
+  ##############################################################################
+  @doc """
+  ## Function
+  """
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, %{}, opts)
+  end
+
+  ##############################################################################
+  @doc """
+  ## Function
+  """
+  @impl true
+  def init(state) do
+    UniError.rescue_error!(Utils.ensure_all_started!([:inets, :ssl]))
+
+    Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I completed init part")
+    {:ok, state}
+  end
+
+  ##############################################################################
+  @doc """
+  ## Function
+  """
+  @impl true
+  def handle_info({:nodeup, node}, state) do
+    UniError.rescue_error!(
+      (
+        Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] Node #{inspect(node)} connected")
+
+        {:ok, remote_postgresiar_node_name_prefixes} = Utils.get_app_env!(:postgresiar, :remote_node_name_prefixes)
+        {:ok, nodes} = Utils.get_nodes_list_by_prefixes!(remote_postgresiar_node_name_prefixes, [node])
+
+        if nodes == [] do
+          Logger.warn("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] No postgresiar nodes in cluster, cannot start http clients")
+        else
+          {:ok, pid} = HttpClientService.start_transports!()
+        end
+      )
+    )
+
+    {:noreply, state}
+  end
 
   ##############################################################################
   ##############################################################################

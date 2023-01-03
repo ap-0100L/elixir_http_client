@@ -45,7 +45,7 @@ defmodule HttpClient.MixProject do
       {:tesla, "~> 1.4.4"},
       #
       {:utils, in_umbrella: true}
-#      {:utils, git: "https://github.com/AndreyGesler/elixir_utils.git", tag: "dev"}
+      #      {:utils, git: "https://github.com/AndreyGesler/elixir_utils.git", tag: "dev"}
     ]
   end
 

@@ -2,14 +2,14 @@ defmodule HttpClient.Application do
   ##############################################################################
   ##############################################################################
   @moduledoc """
-
+  ## Module
   """
   use Application
   use Utils
 
   ##############################################################################
   @doc """
-  # get_opts.
+  ### get_opts.
   """
   defp get_opts do
     result = [
@@ -22,21 +22,28 @@ defmodule HttpClient.Application do
 
   ##############################################################################
   @doc """
-  # get_children!
+  ### get_children!
   """
   defp get_children! do
-    {:ok, pools} = get_app_env!(:pools)
+    {:ok, from_db} = get_app_env!(:from_db)
 
-    result = [
-      {Finch, name: CommonFinch, pools: pools}
-    ]
+    result =
+      if from_db do
+        []
+      else
+        {:ok, pools} = get_app_env!(:pools)
+
+        [
+          {Finch, name: finch_name, pools: pools}
+        ]
+      end
 
     {:ok, result}
   end
 
   ##############################################################################
   @doc """
-  # Start application.
+  ### Start application.
   """
   def start(_type, _args) do
     {:ok, children} = get_children!()
