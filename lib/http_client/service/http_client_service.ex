@@ -10,7 +10,7 @@ defmodule HttpClient.Services.HttpClientService do
   @supervisor_name HttpClient.Supervisor
   @transport_id HttpClient.CommonHttpClient
   @transport_name CommonFinch
-  @query "select t.id, t.config from {#} as t where t.state_id = 'active'"
+  @query "select t.url, t.config from {#} as t where t.state_id = 'active'"
 
   ##############################################################################
   @doc """
@@ -24,7 +24,7 @@ defmodule HttpClient.Services.HttpClientService do
   @doc """
   ## Function
   """
-  def build_transport_group_list!(db_repo, table_name)
+  def build_children_spec_list!(db_repo, table_name)
       when not is_atom(db_repo) or not is_bitstring(table_name),
       do:
         UniError.raise_error!(
@@ -32,17 +32,17 @@ defmodule HttpClient.Services.HttpClientService do
           ["db_repo, table_name cannot be nil; db_repo must be an atom; table_name must be a string"]
         )
 
-  def build_transport_group_list!(db_repo, table_name) do
-    query = Utils.format_string_(query, [table_name])
-    {:ok, transports} = db_repo.exec_query!(query)
+  def build_children_spec_list!(db_repo, table_name) do
+    query = Utils.format_string_(@query, [table_name])
+    {:ok, records} = db_repo.exec_query!(query)
 
-    if transports == :CODE_NOTHING_FOUND do
+    if records == :CODE_NOTHING_FOUND do
       UniError.raise_error!(:CODE_REST_API_CLIENTS_NOT_FOUND_ERROR, ["Rest API clients not found"])
     end
 
     finch_pools =
       Enum.reduce(
-        transports,
+        records,
         %{
           :default => [
             size: 10,
@@ -50,7 +50,7 @@ defmodule HttpClient.Services.HttpClientService do
           ]
         },
         fn item, accum ->
-          %{id: url, config: config} = item
+          %{url: url, config: config} = item
           Map.put(accum, url, config)
         end
       )
@@ -68,7 +68,6 @@ defmodule HttpClient.Services.HttpClientService do
   def start_transports!() do
     Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I will try start http clients")
 
-    {:ok, @transport_name} = get_app_env!(:@transport_name)
     {:ok, db_repo} = get_app_env!(:db_repo)
     {:ok, table_name} = get_app_env!(:table_name)
 
@@ -76,7 +75,7 @@ defmodule HttpClient.Services.HttpClientService do
     raise_if_empty!(db_repo, :atom, "Wrong db_repo value")
     raise_if_empty!(table_name, :string, "Wrong table_name value")
 
-    {:ok, child_spec} = build_transport_group_list!(@transport_name, db_repo, table_name)
+    {:ok, child_spec} = build_children_spec_list!(@transport_name, db_repo, table_name)
 
     opts = [
       strategy: :one_for_one,

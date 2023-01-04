@@ -81,18 +81,17 @@ end
 ### If from_db is true
 ```sql
 CREATE TABLE transport (
-	id text NOT NULL, -- URL
+	url text NOT NULL, -- URL
 	config text NOT NULL, -- Config in elexir code
-	state_id varchar(64) NOT NULL, -- State id: active, inactive
+	state_id varchar(64) NOT NULL -- State id: active, inactive
     -- Any other fields
-	CONSTRAINT transport_pk PRIMARY KEY (id)
 );
 
-COMMENT ON COLUMN transport.id IS 'URL';
+COMMENT ON COLUMN transport.url IS 'URL';
 COMMENT ON COLUMN transport.config IS 'Config';
 COMMENT ON COLUMN transport.state_id IS 'State id';
 
-select t.id, t.config from transport as t where t.state_id = 'active'
+select t.url, t.config from transport as t where t.state_id = 'active'
 
 ```
 
