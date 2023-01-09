@@ -75,7 +75,7 @@ defmodule HttpClient.Services.HttpClientService do
     raise_if_empty!(db_repo, :atom, "Wrong db_repo value")
     raise_if_empty!(table_name, :string, "Wrong table_name value")
 
-    {:ok, child_spec} = build_children_spec_list!(@transport_name, db_repo, table_name)
+    {:ok, child_spec} = build_children_spec_list!(db_repo, table_name)
 
     opts = [
       strategy: :one_for_one,
