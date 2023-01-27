@@ -7,6 +7,8 @@ defmodule HttpClient.Application do
   use Application
   use Utils
 
+  alias HttpClient.Services.HttpClientService, as: HttpClientService
+
   ##############################################################################
   @doc """
   ### get_opts.
@@ -27,7 +29,7 @@ defmodule HttpClient.Application do
   defp get_children! do
     {:ok, from_db} = get_app_env!(:from_db)
 
-    finch_name = CCommonFinch
+    finch_name = HttpClientService.get_transport_name_()
 
     result =
       if from_db do

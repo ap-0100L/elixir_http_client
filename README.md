@@ -79,6 +79,8 @@ end
 ```
 
 ### If from_db is true
+
+#### SQL
 ```sql
 CREATE TABLE transport (
 	url text NOT NULL, -- URL
@@ -92,6 +94,24 @@ COMMENT ON COLUMN transport.config IS 'Config';
 COMMENT ON COLUMN transport.state_id IS 'State id';
 
 select t.url, t.config from transport as t where t.state_id = 'active'
+```
+
+#### Start application
+```elixir
+alias HttpClient.Services.HttpClientService, as: HttpClientService
+
+  ##############################################################################
+  @doc """
+  ### get_children!
+  """
+  defp get_children! do
+
+    finch_name = HttpClientService.start_transports!()
+
+    result = []
+
+    {:ok, result}
+  end
 
 ```
 
