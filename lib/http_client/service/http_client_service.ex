@@ -82,7 +82,7 @@ defmodule HttpClient.Services.HttpClientService do
       name: @supervisor_name
     ]
 
-    result = Utils.supervisor_start_link!(child_spec, opts)
+    result = Utils.supervisor_start_link(child_spec, opts)
 
     Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] Rest api clients successfully started")
 
