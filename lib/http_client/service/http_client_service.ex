@@ -34,7 +34,7 @@ defmodule HttpClient.Services.HttpClientService do
 
   def build_children_spec_list!(db_repo, table_name) do
     query = Utils.format_string_(@query, [table_name])
-    {:ok, records} = db_repo.exec_query!(query)
+    {:ok, records} = db_repo.exec_query(query)
 
     if records == :CODE_NOTHING_FOUND do
       UniError.raise_error!(:CODE_REST_API_CLIENTS_NOT_FOUND_ERROR, ["Rest API clients not found"])
