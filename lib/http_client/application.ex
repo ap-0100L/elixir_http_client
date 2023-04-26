@@ -27,7 +27,7 @@ defmodule HttpClient.Application do
   ### get_children!
   """
   defp get_children! do
-    {:ok, from_db} = get_app_env!(:from_db)
+    {:ok, from_db} = get_app_env(:from_db)
 
     finch_name = HttpClientService.get_transport_name_()
 
@@ -35,7 +35,7 @@ defmodule HttpClient.Application do
       if from_db do
         []
       else
-        {:ok, pools} = get_app_env!(:pools)
+        {:ok, pools} = get_app_env(:pools)
 
         [
           {Finch, name: finch_name, pools: pools}

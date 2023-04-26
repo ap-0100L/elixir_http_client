@@ -332,7 +332,7 @@ defmodule HttpClient do
       (
         Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] Node #{inspect(node)} connected")
 
-        {:ok, remote_postgresiar_node_name_prefixes} = Utils.get_app_env!(:postgresiar, :remote_node_name_prefixes)
+        {:ok, remote_postgresiar_node_name_prefixes} = Utils.get_app_env(:postgresiar, :remote_node_name_prefixes)
         {:ok, nodes} = Utils.get_nodes_list_by_prefixes!(remote_postgresiar_node_name_prefixes, [node])
 
         if nodes == [] do

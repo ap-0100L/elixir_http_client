@@ -70,8 +70,8 @@ defmodule HttpClient.Services.HttpClientService do
 
     raise_if_empty!(@transport_name, :atom, "Wrong @transport_name value")
 
-    {:ok, db_repo} = get_app_env!(:db_repo)
-    {:ok, table_name} = get_app_env!(:table_name)
+    {:ok, db_repo} = get_app_env(:db_repo)
+    {:ok, table_name} = get_app_env(:table_name)
     raise_if_empty!(db_repo, :atom, "Wrong db_repo value")
     raise_if_empty!(table_name, :string, "Wrong table_name value")
 
