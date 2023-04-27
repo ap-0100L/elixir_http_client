@@ -16,7 +16,7 @@ defmodule HttpClient.Services.HttpClientService do
   @doc """
   ## Function
   """
-  def get_transport_name_() do
+  def get_transport_name() do
     @transport_name
   end
 
@@ -33,7 +33,7 @@ defmodule HttpClient.Services.HttpClientService do
         )
 
   def build_children_spec_list!(db_repo, table_name) do
-    query = Utils.format_string_(@query, [table_name])
+    query = Utils.format_string(@query, [table_name])
     {:ok, records} = db_repo.exec_query(query)
 
     if records == :CODE_NOTHING_FOUND do

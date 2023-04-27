@@ -29,7 +29,7 @@ defmodule HttpClient.Application do
   defp get_children! do
     {:ok, from_db} = get_app_env(:from_db)
 
-    finch_name = HttpClientService.get_transport_name_()
+    finch_name = HttpClientService.get_transport_name()
 
     result =
       if from_db do
