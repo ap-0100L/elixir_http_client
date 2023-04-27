@@ -7,7 +7,10 @@ defmodule HttpClient.Application do
   use Application
   use Utils
 
-  alias HttpClient.Services.HttpClientService, as: HttpClientService
+  alias HttpClient, as: HttpClientWorker
+
+  @supervisor_name HttpClient.Supervisor
+  @dynamic_supervisor_name HttpClient.DynamicSupervisor
 
   ##############################################################################
   @doc """
@@ -16,7 +19,7 @@ defmodule HttpClient.Application do
   defp get_opts do
     result = [
       strategy: :one_for_one,
-      name: HttpClient.Supervisor
+      name: @supervisor_name
     ]
 
     {:ok, result}
@@ -27,20 +30,10 @@ defmodule HttpClient.Application do
   ### get_children!
   """
   defp get_children! do
-    {:ok, from_db} = get_app_env(:from_db)
-
-    finch_name = HttpClientService.get_transport_name()
-
-    result =
-      if from_db do
-        []
-      else
-        {:ok, pools} = get_app_env(:pools)
-
-        [
-          {Finch, name: finch_name, pools: pools}
-        ]
-      end
+    result = [
+      {DynamicSupervisor, name: @dynamic_supervisor_name, strategy: :one_for_one, restart: :permanent},
+      {HttpClientWorker, strategy: :one_for_one, restart: :permanent}
+    ]
 
     {:ok, result}
   end
@@ -49,11 +42,20 @@ defmodule HttpClient.Application do
   @doc """
   ### Start application.
   """
+  @impl true
   def start(_type, _args) do
     {:ok, children} = get_children!()
     {:ok, opts} = get_opts()
 
     Supervisor.start_link(children, opts)
+  end
+
+  ##############################################################################
+  @doc """
+  # Function.
+  """
+  def get_dynamic_supervisor_name() do
+    @dynamic_supervisor_name
   end
 
   ##############################################################################

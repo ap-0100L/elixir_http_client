@@ -39,8 +39,6 @@ defmodule HttpClient.MixProject do
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
       # {:sibling_app_in_umbrella, in_umbrella: true}
       #
-      {:logger_file_backend, "~> 0.0.13"},
-      #
       {:finch, "~> 0.13"},
       {:tesla, "~> 1.4.4"},
       #

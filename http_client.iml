@@ -141,5 +141,22 @@
     <orderEntry type="library" name="tesla" level="project" />
     <orderEntry type="library" name="finch" level="project" />
     <orderEntry type="library" name="tesla" level="project" />
+    <orderEntry type="library" name="finch" level="project" />
+    <orderEntry type="library" name="tesla" level="project" />
+    <orderEntry type="library" name="bypass" level="project" />
+    <orderEntry type="library" name="cowboy" level="project" />
+    <orderEntry type="library" name="plug_cowboy" level="project" />
+    <orderEntry type="library" name="x509" level="project" />
+    <orderEntry type="library" name="ibrowse" level="project" />
+    <orderEntry type="library" name="gun" level="project" />
+    <orderEntry type="library" name="poison" level="project" />
+    <orderEntry type="library" name="exjsx" level="project" />
+    <orderEntry type="library" name="fuse" level="project" />
+    <orderEntry type="library" name="httparrot" level="project" />
+    <orderEntry type="library" name="mix_test_watch" level="project" />
+    <orderEntry type="library" name="cowlib" level="project" />
+    <orderEntry type="library" name="ranch" level="project" />
+    <orderEntry type="library" name="mox" level="project" />
+    <orderEntry type="library" name="hpack" level="project" />
   </component>
 </module>

@@ -9,69 +9,19 @@ import Config
 
 import ConfigUtils, only: [get_env!: 3, get_env!: 2, get_env_name!: 1]
 
-in_container = in_container!()
-
-if in_container do
-  config :logger,
-    handle_otp_reports: true,
-    backends: [
-      :console
-    ]
-
-  config :logger,
-         :console,
-         level: get_env!("CONSOLE_LOG_LEVEL"), :atom, :info),
-         format: get_env!("LOG_FORMAT"), :string, "[$date] [$time] [$level] [$node] [$metadata] [$levelpad] [$message]\n"),
-         metadata: :all
-else
-  config :logger,
-    handle_otp_reports: true,
-    backends: [
-      :console,
-      {LoggerFileBackend, :info_log},
-      {LoggerFileBackend, :error_log}
-    ]
-
-  config :logger,
-         :console,
-         level: get_env!("CONSOLE_LOG_LEVEL"), :atom, :info),
-         format: get_env!("LOG_FORMAT"), :string, "[$date] [$time] [$level] [$node] [$metadata] [$levelpad] [$message]\n"),
-         metadata: :all
-
-  config :logger,
-         :info_log,
-         level: :info,
-         path: get_env!("LOG_PATH"), :string, "log") <> "/#{Node.self()}/info.log",
-         format: get_env!("LOG_FORMAT"), :string, "[$date] [$time] [$level] [$node] [$metadata] [$levelpad] [$message]\n"),
-         metadata: :all
-
-  config :logger,
-         :error_log,
-         level: :error,
-         path: get_env!("LOG_PATH"), :string, "log") <> "/#{Node.self()}/error.log",
-         format: get_env!("LOG_FORMAT"), :string, "[$date] [$time] [$level] [$node] [$metadata] [$levelpad] [$message]\n"),
-         metadata: :all
-end
-
-
-if config_env() in [:dev] do
-end
-
-if config_env() in [:prod] do
-end
 
   config :http_client,
-    from_db: false,
-    table_name: "germes.transport",
+    db_repo: Repo,
+    table_name: get_env!("HTTP_CLIENT_TABLE", :string, "germes.http_client"),
     pools: %{
       :default => [
         protocol: :http1,
-        size: get_env!("HTTP_CLIENT_DEFAULT_POOL_SIZE"), :integer, 10),
-        count: get_env!("HTTP_CLIENT_DEFAULT_POOL_COUNT"), :integer, 5),
-        conn_max_idle_time: get_env!("HTTP_CLIENT_DEFAULT_POOL_CONN_MAX_IDLE_TIME"), :integer, 10_000),
-        pool_max_idle_time: get_env!("HTTP_CLIENT_DEFAULT_POOL_POOL_MAX_IDLE_TIME"), :integer, 10_000),
+        size: get_env!("HTTP_CLIENT_DEFAULT_POOL_SIZE", :integer, 10),
+        count: get_env!("HTTP_CLIENT_DEFAULT_POOL_COUNT", :integer, 5),
+        conn_max_idle_time: get_env!("HTTP_CLIENT_DEFAULT_POOL_CONN_MAX_IDLE_TIME", :integer, 10_000),
+        pool_max_idle_time: get_env!("HTTP_CLIENT_DEFAULT_POOL_POOL_MAX_IDLE_TIME", :integer, 10_000),
         conn_opts: [
-          timeout: get_env!("HTTP_CLIENT_DEFAULT_POOL_CONN_TIMEOUT"), :integer, 30_000),
+          timeout: get_env!("HTTP_CLIENT_DEFAULT_POOL_CONN_TIMEOUT", :integer, 30_000),
           transport_opts: [verify: :verify_none]
         ]
       ]
@@ -98,20 +48,8 @@ select t.url, t.config from transport as t where t.state_id = 'active'
 
 #### Start application
 ```elixir
-alias HttpClient.Services.HttpClientService, as: HttpClientService
 
-  ##############################################################################
-  @doc """
-  ### get_children!
-  """
-  defp get_children! do
-
-    finch_name = HttpClientService.start_transports!()
-
-    result = []
-
-    {:ok, result}
-  end
+{:ok, pid} = HttpClient.Services.HttpClientService.start_http_client()
 
 ```
 
