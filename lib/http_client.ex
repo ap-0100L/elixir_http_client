@@ -54,7 +54,7 @@ defmodule HttpClient do
         if :ok != result do
           UniError.raise_error!(:CODE_CAN_NOT_ENABLE_MONITOR_ERROR, ["Can not enable notification monitor on node connection events"], reason: result)
         end
-        )
+      )
     )
 
     Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I completed init part")
@@ -86,7 +86,7 @@ defmodule HttpClient do
             end
 
           {:ok, state}
-          )
+        )
       )
 
     {:noreply, state}
@@ -106,11 +106,10 @@ defmodule HttpClient do
   def http_send(method, url, body \\ nil, request_headers \\ [])
 
   def http_send(method, url, body, request_headers)
-      when is_nil(method) or is_nil(url) or is_nil(request_headers) or
-             method not in @http_methods or not is_bitstring(url) or
+      when method not in @http_methods or not is_bitstring(url) or
              (not is_nil(body) and not is_bitstring(body) and not is_tuple(body)) or not is_list(request_headers) do
     UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, [
-      "method, url, request_headers can not be nil; url, if body not nil must be a string or tuple {:stream, stream}; request_headers must be a list; method, method must be one of #{inspect(@http_methods)}"
+      "method, url, request_headers can not be nil; url must be a string; if body not nil must be a string or tuple {:stream, stream}; request_headers must be a list; method, method must be one of #{inspect(@http_methods)}"
     ])
   end
 
