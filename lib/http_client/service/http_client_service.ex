@@ -42,7 +42,7 @@ defmodule HttpClient.Services.HttpClientService do
     {:ok, records} = db_repo.exec_query(query)
 
     pools =
-      if records == :CODE_NOTHING_FOUND do
+      if records == :CODE_NOT_FOUND do
         Logger.warn("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I did not found any consumer")
         pools
       else

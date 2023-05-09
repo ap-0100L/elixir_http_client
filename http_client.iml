@@ -158,5 +158,6 @@
     <orderEntry type="library" name="ranch" level="project" />
     <orderEntry type="library" name="mox" level="project" />
     <orderEntry type="library" name="hpack" level="project" />
+    <orderEntry type="library" name="kadabra" level="project" />
   </component>
 </module>
