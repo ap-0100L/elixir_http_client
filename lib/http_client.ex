@@ -350,8 +350,7 @@ defmodule HttpClient do
     raise_if_empty!(login, :string, "Wrong login value")
     raise_if_empty!(password, :string, "Wrong password value")
 
-    header = login <> ":" <> password
-    {:ok, header} = Utils.encode64!(header)
+    header = Base.encode64(login <> ":" <> password)
     header = "Basic " <> header
     header = {"Authorization", header}
 
@@ -365,7 +364,6 @@ defmodule HttpClient do
   def build_auth(:bearer_token, %{token: token} = _credential, _endpoint) do
     raise_if_empty!(token, :string, "Wrong token value")
 
-    # {:ok, token} = Utils.encode64!(token)
     header = "Bearer " <> token
     header = {"Authorization", header}
 
