@@ -32,7 +32,7 @@ defmodule HttpClient.Services.HttpClientService do
       when not is_atom(db_repo) or not is_bitstring(table_name) or not is_map(pools),
       do:
         UniError.raise_error!(
-          :CODE_WRONG_FUNCTION_ARGUMENT_ERROR,
+          :WRONG_FUNCTION_ARGUMENT_ERROR,
           ["db_repo, table_name, pools cannot be nil; db_repo must be an atom; table_name must be a string; pools must be a map"]
         )
 
@@ -42,7 +42,7 @@ defmodule HttpClient.Services.HttpClientService do
     {:ok, records} = db_repo.exec_query(query)
 
     pools =
-      if records == :CODE_NOT_FOUND do
+      if records == :NOT_FOUND do
         Logger.warn("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I did not found any consumer")
         pools
       else
@@ -98,7 +98,7 @@ defmodule HttpClient.Services.HttpClientService do
       when is_nil(pid) or not is_atom(reason) or (not is_atom(timeout) and not is_number(timeout)),
       do:
         UniError.raise_error!(
-          :CODE_WRONG_FUNCTION_ARGUMENT_ERROR,
+          :WRONG_FUNCTION_ARGUMENT_ERROR,
           ["reason, timeout cannot be nil; reason must be an atom; timeout must be an atom or number"]
         )
 

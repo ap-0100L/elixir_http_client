@@ -52,7 +52,7 @@ defmodule HttpClient do
         result = :net_kernel.monitor_nodes(true)
 
         if :ok != result do
-          UniError.raise_error!(:CODE_CAN_NOT_ENABLE_MONITOR_ERROR, ["Can not enable notification monitor on node connection events"], reason: result)
+          UniError.raise_error!(:CAN_NOT_ENABLE_MONITOR_ERROR, ["Can not enable notification monitor on node connection events"], reason: result)
         end
       )
     )
@@ -108,7 +108,7 @@ defmodule HttpClient do
   def http_send(method, url, body, request_headers)
       when method not in @http_methods or not is_bitstring(url) or
              (not is_nil(body) and not is_bitstring(body) and not is_tuple(body)) or not is_list(request_headers) do
-    UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, [
+    UniError.raise_error!(:WRONG_FUNCTION_ARGUMENT_ERROR, [
       "method, url, request_headers can not be nil; url must be a string; if body not nil must be a string or tuple {:stream, stream}; request_headers must be a list; method, method must be one of #{inspect(@http_methods)}"
     ])
   end
@@ -151,7 +151,7 @@ defmodule HttpClient do
             status == 500 ->
               # TODO: In this case re-query message or retry re-resend
               UniError.raise_error!(
-                :CODE_HTTP_REMOTE_SERVICE_RESPONDED_500_ERROR,
+                :HTTP_REMOTE_SERVICE_RESPONDED_500_ERROR,
                 ["Remote service responded with error"],
                 url: url,
                 method: method,
@@ -166,7 +166,7 @@ defmodule HttpClient do
 
             true ->
               UniError.raise_error!(
-                :CODE_HTTP_REMOTE_SERVICE_RESPONDED_NOT_2XX_ERROR,
+                :HTTP_REMOTE_SERVICE_RESPONDED_NOT_2XX_ERROR,
                 ["Remote service responded with error"],
                 url: url,
                 method: method,
@@ -182,7 +182,7 @@ defmodule HttpClient do
 
         {:ok, response} ->
           UniError.raise_error!(
-            :CODE_HTTP_REMOTE_SERVICE_RESPONDED_WITH_ERROR,
+            :HTTP_REMOTE_SERVICE_RESPONDED_WITH_ERROR,
             ["Remote service responded with error"],
             url: url,
             method: method,
@@ -198,7 +198,7 @@ defmodule HttpClient do
         {:error, reason} ->
           # TODO: In this case re-query message or retry re-resend
           UniError.raise_error!(
-            :CODE_HTTP_CONNECTION_ERROR,
+            :HTTP_CONNECTION_ERROR,
             ["HTTP connection error"],
             url: url,
             method: method,
@@ -211,7 +211,7 @@ defmodule HttpClient do
 
         unexpected ->
           UniError.raise_error!(
-            :CODE_HTTP_CONNECTION_UNEXPECTED_ERROR,
+            :HTTP_CONNECTION_UNEXPECTED_ERROR,
             ["HTTP connection unexpected error"],
             url: url,
             method: method,
@@ -240,7 +240,7 @@ defmodule HttpClient do
 
   def build_multipart_form(fields, content_type_param, files, files_content)
       when not is_list(fields) or not is_bitstring(content_type_param) or not is_list(files) or not is_list(files_content),
-      do: UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["fields, content_type_param, files, files_content cannot be nil; fields, files, files_content must be a list; content_type_param must be a string"])
+      do: UniError.raise_error!(:WRONG_FUNCTION_ARGUMENT_ERROR, ["fields, content_type_param, files, files_content cannot be nil; fields, files, files_content must be a list; content_type_param must be a string"])
 
   def build_multipart_form(fields, content_type_param, files, files_content) do
     mp =
@@ -288,7 +288,7 @@ defmodule HttpClient do
 
   def send_multipart_form(url, fields, content_type_param, files, files_content)
       when not is_bitstring(url) or not is_bitstring(content_type_param) or not is_list(fields) or not is_list(files) or not is_list(files_content),
-      do: UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["url, fields, content_type_param, files, files_content cannot be nil; url, content_type_param must be a string; fields, files, files_content must be a list"])
+      do: UniError.raise_error!(:WRONG_FUNCTION_ARGUMENT_ERROR, ["url, fields, content_type_param, files, files_content cannot be nil; url, content_type_param must be a string; fields, files, files_content must be a list"])
 
   def send_multipart_form(url, fields, content_type_param, files, files_content) do
     {:ok, mp} = build_multipart_form(fields, content_type_param, files, files_content)
@@ -324,13 +324,13 @@ defmodule HttpClient do
       when auth_type_id not in @auth_type_ids or not is_map(credential) or (not is_nil(endpoint) and not is_bitstring(endpoint)),
       do:
         UniError.raise_error!(
-          :CODE_WRONG_FUNCTION_ARGUMENT_ERROR,
+          :WRONG_FUNCTION_ARGUMENT_ERROR,
           ["auth_type_id, credential cannot be nil; auth_type_id must be one of #{inspect(@auth_type_ids)}; endpoint if not nil must be a string"]
         )
 
   def build_auth(:telegram_bot_token, %{token: token} = _credential, endpoint)
       when not is_bitstring(token) or not is_bitstring(endpoint),
-      do: UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["token, endpoint cannot be nil; token, endpoint must be a string"], auth_type_id: :telegram_bot_token)
+      do: UniError.raise_error!(:WRONG_FUNCTION_ARGUMENT_ERROR, ["token, endpoint cannot be nil; token, endpoint must be a string"], auth_type_id: :telegram_bot_token)
 
   def build_auth(:telegram_bot_token, %{token: token} = _credential, endpoint) do
     raise_if_empty!(endpoint, :string, "Wrong endpoint value")
@@ -344,7 +344,7 @@ defmodule HttpClient do
 
   def build_auth(:basic_auth, %{login: login, password: password} = _credential, _endpoint)
       when not is_bitstring(login) or not is_bitstring(password),
-      do: UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["login, password cannot be nil; login, password must be a string"], auth_type_id: :basic_auth)
+      do: UniError.raise_error!(:WRONG_FUNCTION_ARGUMENT_ERROR, ["login, password cannot be nil; login, password must be a string"], auth_type_id: :basic_auth)
 
   def build_auth(:basic_auth, %{login: login, password: password} = _credential, _endpoint) do
     raise_if_empty!(login, :string, "Wrong login value")
@@ -359,7 +359,7 @@ defmodule HttpClient do
 
   def build_auth(:bearer_token, %{token: token} = _credential, _endpoint)
       when not is_bitstring(token),
-      do: UniError.raise_error!(:CODE_WRONG_FUNCTION_ARGUMENT_ERROR, ["token cannot be nil; token must be a string"], auth_type_id: :bearer_token)
+      do: UniError.raise_error!(:WRONG_FUNCTION_ARGUMENT_ERROR, ["token cannot be nil; token must be a string"], auth_type_id: :bearer_token)
 
   def build_auth(:bearer_token, %{token: token} = _credential, _endpoint) do
     raise_if_empty!(token, :string, "Wrong token value")
@@ -371,7 +371,7 @@ defmodule HttpClient do
   end
 
   def build_auth(auth_type_id, _credential, _endpoint),
-    do: UniError.raise_error!(:CODE_WRONG_ARGUMENT_COMBINATION_ERROR, ["Wrong argument combination"], auth_type_id: auth_type_id)
+    do: UniError.raise_error!(:WRONG_ARGUMENT_COMBINATION_ERROR, ["Wrong argument combination"], auth_type_id: auth_type_id)
 
   ##############################################################################
   @doc """
