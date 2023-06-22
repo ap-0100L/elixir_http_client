@@ -52,7 +52,7 @@ defmodule HttpClient do
         result = :net_kernel.monitor_nodes(true)
 
         if :ok != result do
-          UniError.raise_error!(:CAN_NOT_ENABLE_MONITOR_ERROR, ["Can not enable notification monitor on node connection events"], reason: result)
+          UniError.raise_error!(:CAN_NOT_ENABLE_MONITOR_ERROR, ["Can not enable notification monitor on node connection events"], previous: result)
         end
       )
     )
