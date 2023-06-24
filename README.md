@@ -30,20 +30,51 @@ import ConfigUtils, only: [get_env: 3, get_env: 2, get_env_name!: 1]
 
 ### If from_db is true
 
-#### SQL
+#### SQL Create table
+
 ```sql
-CREATE TABLE transport (
-	url text NOT NULL, -- URL
-	config text NOT NULL, -- Config in elexir code
-	state_id varchar(64) NOT NULL -- State id: active, inactive
-    -- Any other fields
+-- DROP TABLE germes.http_client;
+
+CREATE TABLE germes.http_client (
+                                    id text NOT NULL, -- URL
+                                    description varchar(512) NOT NULL, -- Description
+                                    config text NOT NULL, -- Config
+                                    "order" int8 NOT NULL DEFAULT 0, -- Order
+                                    state_id varchar(64) NOT NULL DEFAULT 'ACTIVE'::character varying, -- State id
+                                    owner_id uuid NOT NULL, -- Essence id
+                                    created_by uuid NOT NULL, -- Essence id
+                                    updated_by uuid NOT NULL, -- Essence id
+                                    created_at timestamptz NOT NULL DEFAULT now(), -- Readonly
+                                    updated_at timestamptz NOT NULL DEFAULT now(), -- Readonly
+                                    CONSTRAINT http_client_pk PRIMARY KEY (id)
 );
 
-COMMENT ON COLUMN transport.url IS 'URL';
-COMMENT ON COLUMN transport.config IS 'Config';
-COMMENT ON COLUMN transport.state_id IS 'State id';
+-- Column comments
 
-select t.url, t.config from transport as t where t.state_id = 'active'
+COMMENT ON COLUMN germes.http_client.id IS 'URL';
+COMMENT ON COLUMN germes.http_client.description IS 'Description';
+COMMENT ON COLUMN germes.http_client.config IS 'Config';
+COMMENT ON COLUMN germes.http_client."order" IS 'Order';
+COMMENT ON COLUMN germes.http_client.state_id IS 'State id';
+COMMENT ON COLUMN germes.http_client.owner_id IS 'Essence id';
+COMMENT ON COLUMN germes.http_client.created_by IS 'Essence id';
+COMMENT ON COLUMN germes.http_client.updated_by IS 'Essence id';
+COMMENT ON COLUMN germes.http_client.created_at IS 'Readonly';
+COMMENT ON COLUMN germes.http_client.updated_at IS 'Readonly';
+```
+
+#### SQL Select
+
+```sql
+select
+    t.id,
+    t.config,
+    t.order,
+    t.state_id
+from {#} as t
+where
+    t.state_id = 'ACTIVE'
+order by t.order asc
 ```
 
 #### Start application
