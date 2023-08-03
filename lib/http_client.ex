@@ -14,9 +14,9 @@ defmodule HttpClient do
   alias Tesla.Multipart, as: Multipart
   alias HttpClient.Services.HttpClientService, as: HttpClientService
 
-  @auth_type_ids [:basic_auth, :telegram_bot_token, :bearer_token, :url_token]
+  @auth_type_ids [:basic_auth, :telegram_bot_token, :bearer_token, :url_token, :body_token]
   @http_methods [:post, :get]
-  @exclude_headers_from_error ["authorization", "token", "secret"]
+  @exclude_headers_from_error ["authorization", "token", "secret", "apikey", "api-key"]
 
   ##############################################################################
   @doc """
@@ -134,12 +134,14 @@ defmodule HttpClient do
         [],
         fn {name, value} = header, accum ->
           if String.downcase(name) in @exclude_headers_from_error do
-            accum
+            accum ++ [{name, "****************"}]
           else
             accum ++ [header]
           end
         end
       )
+
+    request_body = body
 
     response_body =
       case response do
@@ -158,7 +160,23 @@ defmodule HttpClient do
                 content_type: content_type,
                 request_headers: request_headers,
                 request_options: request_options,
-                request_body: body,
+                request_body: request_body,
+                http_code: response.status,
+                response_headers: response.headers,
+                response_body: response.body
+              )
+
+            400 <= status and status <= 499 ->
+              # TODO: In this case re-query message or retry re-resend
+              UniError.raise_error!(
+                :HTTP_REMOTE_SERVICE_RESPONDED_4XX_ERROR,
+                ["Remote service responded with error"],
+                url: url,
+                method: method,
+                content_type: content_type,
+                request_headers: request_headers,
+                request_options: request_options,
+                request_body: request_body,
                 http_code: response.status,
                 response_headers: response.headers,
                 response_body: response.body
@@ -173,7 +191,7 @@ defmodule HttpClient do
                 content_type: content_type,
                 request_headers: request_headers,
                 request_options: request_options,
-                request_body: body,
+                request_body: request_body,
                 http_code: response.status,
                 response_headers: response.headers,
                 response_body: response.body
@@ -189,7 +207,7 @@ defmodule HttpClient do
             content_type: content_type,
             request_headers: request_headers,
             request_options: request_options,
-            request_body: body,
+            request_body: request_body,
             http_code: response.status,
             response_headers: response.headers,
             response_body: response.body
@@ -205,7 +223,7 @@ defmodule HttpClient do
             content_type: content_type,
             request_headers: request_headers,
             request_options: request_options,
-            request_body: body,
+            request_body: request_body,
             previous: reason
           )
 
@@ -218,6 +236,7 @@ defmodule HttpClient do
             content_type: content_type,
             request_headers: request_headers,
             request_options: request_options,
+            request_body: request_body,
             previous: unexpected
           )
       end
@@ -311,8 +330,6 @@ defmodule HttpClient do
   ##############################################################################
   @doc """
   ### Function
-
-  :telegram_bot_token endpoint = https://example.com?<TOKEN> --->>> https://example.com?botSERGSDVSDGADFGZXVSDG
   """
   def get(url, request_headers \\ [])
 
@@ -320,33 +337,39 @@ defmodule HttpClient do
     http_send(:get, url, nil, request_headers)
   end
 
-  def build_auth(auth_type_id, credential, endpoint)
-      when auth_type_id not in @auth_type_ids or not is_map(credential) or (not is_nil(endpoint) and not is_bitstring(endpoint)),
+  ##############################################################################
+  @doc """
+  ### Function
+
+  :telegram_bot_token endpoint = https://example.com?<TOKEN> --->>> https://example.com?botSERGSDVSDGADFGZXVSDG
+  """
+  def build_auth(auth_type_id, credential, headers, endpoint, body)
+      when auth_type_id not in @auth_type_ids or not is_map(credential) or (not is_nil(headers) and not is_list(headers)) or (not is_nil(endpoint) and not is_bitstring(endpoint)) or (not is_nil(body) and not is_map(body)),
       do:
         UniError.raise_error!(
           :WRONG_FUNCTION_ARGUMENT_ERROR,
-          ["auth_type_id, credential cannot be nil; auth_type_id must be one of #{inspect(@auth_type_ids)}; endpoint if not nil must be a string"]
+          ["auth_type_id, credential cannot be nil; credential must be a map; auth_type_id must be one of #{inspect(@auth_type_ids)}; headers if not nil must be a list; endpoint if not nil must be a string; body if not nil must be a map"]
         )
 
-  def build_auth(:telegram_bot_token, %{token: token} = _credential, endpoint)
+  def build_auth(:telegram_bot_token, %{token: token} = _credential, _headers, endpoint, _body)
       when not is_bitstring(token) or not is_bitstring(endpoint),
       do: UniError.raise_error!(:WRONG_FUNCTION_ARGUMENT_ERROR, ["token, endpoint cannot be nil; token, endpoint must be a string"], auth_type_id: :telegram_bot_token)
 
-  def build_auth(:telegram_bot_token, %{token: token} = _credential, endpoint) do
+  def build_auth(:telegram_bot_token, %{token: token} = _credential, headers, endpoint, body) do
     raise_if_empty!(endpoint, :string, "Wrong endpoint value")
     raise_if_empty!(token, :string, "Wrong token value")
 
     regex = ~r/<TOKEN>/
     endpoint = Regex.replace(regex, endpoint, "bot" <> token)
 
-    {:ok, endpoint}
+    {:ok, {headers, endpoint, body}}
   end
 
-  def build_auth(:basic_auth, %{login: login, password: password} = _credential, _endpoint)
+  def build_auth(:basic_auth, %{login: login, password: password} = _credential, _headers, _endpoint, _body)
       when not is_bitstring(login) or not is_bitstring(password),
       do: UniError.raise_error!(:WRONG_FUNCTION_ARGUMENT_ERROR, ["login, password cannot be nil; login, password must be a string"], auth_type_id: :basic_auth)
 
-  def build_auth(:basic_auth, %{login: login, password: password} = _credential, _endpoint) do
+  def build_auth(:basic_auth, %{login: login, password: password} = _credential, headers, endpoint, body) do
     raise_if_empty!(login, :string, "Wrong login value")
     raise_if_empty!(password, :string, "Wrong password value")
 
@@ -354,23 +377,35 @@ defmodule HttpClient do
     header = "Basic " <> header
     header = {"Authorization", header}
 
-    {:ok, header}
+    {:ok, {headers ++ [header], endpoint, body}}
   end
 
-  def build_auth(:bearer_token, %{token: token} = _credential, _endpoint)
+  def build_auth(:bearer_token, %{token: token} = _credential, _headers, _endpoint, _body)
       when not is_bitstring(token),
       do: UniError.raise_error!(:WRONG_FUNCTION_ARGUMENT_ERROR, ["token cannot be nil; token must be a string"], auth_type_id: :bearer_token)
 
-  def build_auth(:bearer_token, %{token: token} = _credential, _endpoint) do
+  def build_auth(:bearer_token, %{token: token} = _credential, headers, endpoint, body) do
     raise_if_empty!(token, :string, "Wrong token value")
 
     header = "Bearer " <> token
     header = {"Authorization", header}
 
-    {:ok, header}
+    {:ok, {headers ++ [header], endpoint, body}}
   end
 
-  def build_auth(auth_type_id, _credential, _endpoint),
+  def build_auth(:body_token, %{token: token} = _credential, _headers, _endpoint, body)
+      when not is_bitstring(token) and not is_map(body),
+      do: UniError.raise_error!(:WRONG_FUNCTION_ARGUMENT_ERROR, ["token, body cannot be nil; token must be a string; body must be a map"], auth_type_id: :body_token)
+
+  def build_auth(:body_token, %{token: token} = _credential, headers, endpoint, body) do
+    raise_if_empty!(token, :string, "Wrong token value")
+
+    body = Map.put(body, "token", token)
+
+    {:ok, {headers, endpoint, body}}
+  end
+
+  def build_auth(auth_type_id, _credential, _headers, _endpoint, _body),
     do: UniError.raise_error!(:WRONG_ARGUMENT_COMBINATION_ERROR, ["Wrong argument combination"], auth_type_id: auth_type_id)
 
   ##############################################################################
