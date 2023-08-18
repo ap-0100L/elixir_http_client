@@ -151,10 +151,9 @@ defmodule HttpClient do
               response.body
 
             status == 500 ->
-              # TODO: In this case re-query message or retry re-resend
               UniError.raise_error!(
                 :HTTP_REMOTE_SERVICE_RESPONDED_500_ERROR,
-                ["Remote service responded with error: 500"],
+                ["Remote service responded with status: 500"],
                 url: url,
                 method: method,
                 content_type: content_type,
@@ -167,10 +166,24 @@ defmodule HttpClient do
               )
 
             400 <= status and status <= 499 ->
-              # TODO: In this case re-query message or retry re-resend
               UniError.raise_error!(
                 :HTTP_REMOTE_SERVICE_RESPONDED_4XX_ERROR,
-                ["Remote service responded with error: #{status}"],
+                ["Remote service responded with status: #{status}"],
+                url: url,
+                method: method,
+                content_type: content_type,
+                request_headers: request_headers,
+                request_options: request_options,
+                request_body: request_body,
+                http_code: response.status,
+                response_headers: response.headers,
+                response_body: response.body
+              )
+
+            300 <= status and status <= 399 ->
+              UniError.raise_error!(
+                :HTTP_REMOTE_SERVICE_RESPONDED_3XX_ERROR,
+                ["Remote service responded with status: #{status}"],
                 url: url,
                 method: method,
                 content_type: content_type,
@@ -212,7 +225,6 @@ defmodule HttpClient do
           )
 
         {:error, reason} ->
-          # TODO: In this case re-query message or retry re-resend
           UniError.raise_error!(
             :HTTP_CONNECTION_ERROR,
             ["HTTP connection error"],
