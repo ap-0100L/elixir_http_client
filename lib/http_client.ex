@@ -150,10 +150,10 @@ defmodule HttpClient do
             200 <= status and status <= 299 ->
               response.body
 
-            status == 500 ->
+            500 <= status and status <= 599 ->
               UniError.raise_error!(
-                :HTTP_REMOTE_SERVICE_RESPONDED_500_ERROR,
-                ["Remote service responded with status: 500"],
+                :HTTP_REMOTE_SERVICE_RESPONDED_5XX_ERROR,
+                ["Remote service responded with status: #{status}"],
                 url: url,
                 method: method,
                 content_type: content_type,
