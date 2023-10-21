@@ -43,60 +43,23 @@ defmodule HttpClient do
   """
   @impl true
   def init(state) do
-    UniError.rescue_error!(
-      (
-        Utils.ensure_all_started!([:inets, :ssl])
-
-        Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I will try to enable notification monitor on node connection events")
-
-        result = :net_kernel.monitor_nodes(true)
-
-        if :ok != result do
-          UniError.raise_error!(:CAN_NOT_ENABLE_MONITOR_ERROR, ["Can not enable notification monitor on node connection events"], previous: result)
-        end
-      )
-    )
-
-    Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I completed init part")
-
-    {:ok, state}
-  end
-
-  ##############################################################################
-  @doc """
-  ## Function
-  """
-  @impl true
-  def handle_info({:nodeup, node}, state) do
     {:ok, state} =
       UniError.rescue_error!(
         (
-          Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] Node #{inspect(node)} connected")
+          Utils.ensure_all_started!([:inets, :ssl])
 
-          {:ok, remote_postgresiar_node_name_prefixes} = Utils.get_app_env(:postgresiar, :remote_node_name_prefixes)
-          {:ok, nodes} = Utils.get_nodes_list_by_prefixes(remote_postgresiar_node_name_prefixes, [Node.self(), node])
+          Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I will try init HttpClient")
 
-          state =
-            if nodes == [] do
-              Logger.warn("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] No postgresiar nodes in cluster, cannot start http client")
-              state
-            else
-              {:ok, http_client} = HttpClientService.start_http_client()
-              state = Map.put(state, :http_client, http_client)
-            end
+          {:ok, http_client} = HttpClientService.start_http_client()
+          state = Map.put(state, :http_client, http_client)
 
           {:ok, state}
         )
       )
 
-    {:noreply, state}
-  end
+    Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I completed init part")
 
-  @impl true
-  def handle_info({:nodedown, node}, state) do
-    Logger.info("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] Node #{inspect(node)} disconnected")
-
-    {:noreply, state}
+    {:ok, state}
   end
 
   ##############################################################################
