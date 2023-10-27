@@ -161,6 +161,22 @@ defmodule HttpClient do
                 response_body: response.body
               )
 
+            100 <= status and status <= 199 ->
+              UniError.raise_error!(
+                :HTTP_REMOTE_SERVICE_RESPONDED_1XX_ERROR,
+                ["Remote service responded with status: #{status}"],
+                url: url,
+                status: status,
+                method: method,
+                content_type: content_type,
+                request_headers: request_headers,
+                request_options: request_options,
+                request_body: request_body,
+                http_code: response.status,
+                response_headers: response.headers,
+                response_body: response.body
+              )
+
             true ->
               UniError.raise_error!(
                 :HTTP_REMOTE_SERVICE_RESPONDED_NOT_2XX_ERROR,
