@@ -77,7 +77,6 @@ node_modules
 *.zip
 *.tgz
 
-start.sh
 **/mix.lock
 
 /.idea/libraries/*
