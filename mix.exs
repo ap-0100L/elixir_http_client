@@ -24,7 +24,7 @@ defmodule HttpClient.MixProject do
       # Start only this apps automatically
       # applications: [],
       # A list of OTP applications your application depends on which are not included in :deps
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :logger_file_backend, :runtime_tools]
     ]
   end
 
@@ -41,6 +41,8 @@ defmodule HttpClient.MixProject do
       #
       {:finch, "~> 0.13"},
       {:tesla, "~> 1.4.4"},
+      #
+      {:logger_file_backend, "~> 0.0.13"},
       #
       {:utils, in_umbrella: true}
       #      {:utils, git: "https://github.com/AndreyGesler/elixir_utils.git", tag: "dev"}
