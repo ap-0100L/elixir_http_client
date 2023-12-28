@@ -81,10 +81,12 @@ defmodule HttpClient do
     request_headers = request_headers ++ [{"User-Agent", "PostmanRuntime/7.29.2"}]
     request_headers = request_headers ++ [{"Content-Type", content_type}]
 
+    {:ok, pool_timeout} = get_app_env(:pool_timeout)
+    {:ok, receive_timeout} = get_app_env(:receive_timeout)
+
     request_options = [
-      # FIXME: Move it to config, please
-      {:pool_timeout, 20_000},
-      {:receive_timeout, 20_000}
+      {:pool_timeout, pool_timeout},
+      {:receive_timeout, receive_timeout}
     ]
 
     response =
