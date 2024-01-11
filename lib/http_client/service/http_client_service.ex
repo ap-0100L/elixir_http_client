@@ -43,7 +43,7 @@ defmodule HttpClient.Services.HttpClientService do
 
     pools =
       if records == :NOT_FOUND do
-        Logger.warn("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I did not found any consumer")
+        Logger.warn("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I did not found any http client")
         pools
       else
         _default = Map.fetch!(pools, :default)
@@ -61,7 +61,7 @@ defmodule HttpClient.Services.HttpClientService do
 
     result = Supervisor.child_spec({Finch, name: @transport_name, pools: pools}, id: @transport_id, restart: :transient) #:permanent
 
-    Logger.warn("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I got http clients [#{inspect(result)}]")
+    Logger.debug("[#{inspect(__MODULE__)}][#{inspect(__ENV__.function)}] I got http clients [#{inspect(result)}]")
     {:ok, result}
   end
 
