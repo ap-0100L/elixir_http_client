@@ -81,3 +81,6 @@ node_modules
 
 /.idea/libraries/*
 /.idea/libraries/**
+./mix.lock
+**/*.log
+elixir_tzdata_data
