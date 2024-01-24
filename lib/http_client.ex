@@ -83,10 +83,12 @@ defmodule HttpClient do
 
     {:ok, pool_timeout} = get_app_env(:pool_timeout)
     {:ok, receive_timeout} = get_app_env(:receive_timeout)
+    {:ok, request_timeout} = get_app_env(:request_timeout)
 
     request_options = [
       {:pool_timeout, pool_timeout},
-      {:receive_timeout, receive_timeout}
+      {:receive_timeout, receive_timeout},
+      {:request_timeout, request_timeout}
     ]
 
     response =
