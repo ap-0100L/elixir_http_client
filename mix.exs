@@ -41,7 +41,7 @@ defmodule HttpClient.MixProject do
       #
       {:logger_file_backend, "~> 0.0.13"},
       #
-      {:finch, "~> 0.13"},
+      {:finch, "~> 0.18"},
       {:tesla, "~> 1.4.4"},
       #
       {:utils, in_umbrella: true}
